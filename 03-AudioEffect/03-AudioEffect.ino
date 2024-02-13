@@ -69,11 +69,15 @@ ZeroDMAstatus    stat; // DMA status codes returned by some functions
 Adafruit_ZeroI2S i2s;
 WM8960interface* codec;
 
+unsigned long ptime;
+
 bool rxDone = false;
 bool txDone = false;
 int bindex = 0;
 void processBuffer(){
   if(txDone && rxDone){
+    unsigned long tt = micros();
+    
     txDone = rxDone = false;
 
     // Process buffer number 'index'
@@ -82,7 +86,11 @@ void processBuffer(){
       i++;
       txBuf[bindex][i] = rFilter.tick(rxBuf[bindex][i]);
     }
+    // Done processing
+    
     bindex = 1 - bindex; // Swap buffers
+
+    ptime += (micros()-tt);
   }
 }
 void txcallback(Adafruit_ZeroDMA *dma) {
@@ -96,6 +104,8 @@ void rxcallback(Adafruit_ZeroDMA *dma) {
 
 void setup()
 {
+  ptime = 0;
+  
   Serial.begin(115200);
   while(!Serial);                 // Wait for Serial monitor before continuing
 
@@ -181,5 +191,7 @@ void setup()
 void loop()
 {
   Serial.println("do other things here while your DMA runs in the background.");
+  Serial.println(ptime);
+  ptime = 0;
   delay(2000);
 }
